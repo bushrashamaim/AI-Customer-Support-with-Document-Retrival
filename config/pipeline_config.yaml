@@ -1,0 +1,39 @@
+# Document CV Pipeline — Configuration
+# This file controls default pipeline behavior.
+# Values here are overridden by .env environment variables.
+
+pipeline:
+  dpi: 150
+  use_gpu: false
+  min_ocr_confidence: 0.3
+  ocr_languages:
+    - en
+
+detector:
+  confidence_threshold: 0.4
+  iou_threshold: 0.45
+  use_fallback: true
+  # yolo_model_path: models/yolov8n.pt   # Uncomment after downloading model
+  #   Run: python scripts/download_yolo_model.py
+
+classifier:
+  model_path: models/classifier.pkl
+  fallback_to_heuristic: true
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 2
+  max_file_size_mb: 20
+  log_level: INFO
+
+database:
+  path: database/doc_cv.db
+  enable_fts: true
+
+batch:
+  workers: 4
+  export_csv: true
+  export_json: false
+  save_db: true
+  resume_on_failure: true

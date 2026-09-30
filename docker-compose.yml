@@ -1,0 +1,86 @@
+version: "3.9"
+
+services:
+
+  # ── FastAPI Document CV API ────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: doc_cv_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./database:/app/database        # Persist SQLite DB
+      - ./models:/app/models            # Persist trained models
+      - ./outputs:/app/outputs          # Persist result JSONs
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - doc_cv_net
+
+  # ── Streamlit Dashboard ────────────────────────────────────────────────────
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: doc_cv_ui
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./database:/app/database        # Shared DB with API
+      - ./models:/app/models
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - API_URL=http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - doc_cv_net
+
+  # ── Batch Processor (run-once job) ────────────────────────────────────────
+  batch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: doc_cv_batch
+    command: >
+      python scripts/batch_process.py
+        --input /app/input_docs
+        --output /app/outputs
+        --workers 2
+        --save-db
+        --export-csv
+    volumes:
+      - ./input_docs:/app/input_docs:ro  # Mount your documents here
+      - ./database:/app/database
+      - ./outputs:/app/outputs
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+    profiles:
+      - batch                            # Only runs with: docker compose --profile batch up
+    networks:
+      - doc_cv_net
+
+networks:
+  doc_cv_net:
+    driver: bridge
+
+volumes:
+  database:
+  models:
+  outputs:
+  logs:

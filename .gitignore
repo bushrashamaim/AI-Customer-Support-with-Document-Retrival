@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Models (large binary files — download separately)
+models/*.pt
+models/*.onnx
+# Keep the trained classifier and confusion matrix
+!models/classifier.pkl
+!models/confusion_matrix.json
+
+# Runtime outputs
+logs/*.log
+outputs/
+database/*.db
+
+# OS
+.DS_Store
+Thumbs.db
